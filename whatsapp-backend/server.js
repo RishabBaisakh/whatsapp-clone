@@ -1,16 +1,24 @@
-// => importing....
 import express from "express";
 import mongoose from "mongoose";
 import Messages from "./dbMessages.js";
+import Pusher from "pusher";
 
-// => app config....
+// app config....
 const app = express();
 const port = process.env.PORT || 8080;
 
-// => middleware....
+const pusher = new Pusher({
+  appId: "1120831",
+  key: "69a7ca2d8b224b1fcb10",
+  secret: "f9b525c00ef5013e6305",
+  cluster: "eu",
+  useTLS: true,
+});
+
+// middleware....
 app.use(express.json());
 
-// => DB config....
+// DB config....
 const connection_url =
   "mongodb+srv://admin:rt941olDHz09mpkm@cluster0.5j2ed.mongodb.net/whatsappdb?retryWrites=true&w=majority";
 
@@ -20,10 +28,22 @@ mongoose.connect(connection_url, {
   useUnifiedTopology: true,
 });
 
-// => ?????
-// admin password => rt941olDHz09mpkm
+const db = mongoose.connection;
 
-// => api routes....
+db.once("open", () => {
+  console.log("db is connected!");
+
+  const msgCollection = db.collection("messagecontent");
+  const changeStream = msgCollection.watch();
+
+  changeStream.on("change", (change) => {
+    console.log("change =>", change);
+  });
+});
+
+// ?????
+
+// api routes....
 app.get("/", (req, res) => res.status(200).send("hello world"));
 
 app.get("/messages/sync", (req, res) => {
